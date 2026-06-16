@@ -108,6 +108,7 @@ export default function Home() {
   const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0]);
   const [size, setSize] = useState<SizeKey>("30x40");
   const [orientation, setOrientation] = useState<"portrait" | "landscape">("portrait");
+  const [usePolish, setUsePolish] = useState(false);
 
   useEffect(() => {
     navigator.mediaDevices
@@ -175,7 +176,43 @@ export default function Home() {
       ctx.drawImage(bgImg, (tw - bw) / 2, (th - bh) / 2, bw, bh);
       ctx.drawImage(cutoutImg, 0, 0, tw, th);
 
-      const finalUrl = comp.toDataURL("image/jpeg", 0.9);
+      let finalUrl: string;
+      if (usePolish) {
+        setStatus("Memoles cahaya & warna (AI)… (agak lama)");
+        const portrait = th >= tw;
+        const gw = portrait ? 1024 : 1536;
+        const gh = portrait ? 1536 : 1024;
+
+        const small = document.createElement("canvas");
+        small.width = gw; small.height = gh;
+        small.getContext("2d")!.drawImage(comp, 0, 0, gw, gh);
+
+        const maskCanvas = document.createElement("canvas");
+        maskCanvas.width = gw; maskCanvas.height = gh;
+        maskCanvas.getContext("2d")!.drawImage(cutoutImg, 0, 0, gw, gh);
+
+        const pres = await fetch("/api/polish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image: small.toDataURL("image/png"),
+            mask: maskCanvas.toDataURL("image/png"),
+            size: `${gw}x${gh}`,
+          }),
+        });
+        const pjson = await pres.json();
+        if (pjson.error) throw new Error(pjson.error);
+
+        const polishedImg = await loadImage(pjson.image);
+        const out = document.createElement("canvas");
+        out.width = tw; out.height = th;
+        const octx = out.getContext("2d")!;
+        octx.imageSmoothingQuality = "high";
+        octx.drawImage(polishedImg, 0, 0, tw, th);
+        finalUrl = out.toDataURL("image/jpeg", 0.9);
+      } else {
+        finalUrl = comp.toDataURL("image/jpeg", 0.9);
+      }
       setPhoto(finalUrl);
 
       setStatus("Menyimpan & membuat QR…");
@@ -226,11 +263,10 @@ export default function Home() {
             ))}
           </div>
 
-          <span style={styles.label}>Orientasi</span>
-          <div style={styles.sizeRow}>
-            <button onClick={() => setOrientation("portrait")} style={sizeBtn(orientation === "portrait")}>Potret</button>
-            <button onClick={() => setOrientation("landscape")} style={sizeBtn(orientation === "landscape")}>Lanskap</button>
-          </div>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "#d8c9bb", fontSize: 14 }}>
+            <input type="checkbox" checked={usePolish} onChange={(e) => setUsePolish(e.target.checked)} />
+            Poles cahaya pakai AI (berbiaya)
+          </label>
 
           <span style={styles.label}>Pilih Latar</span>
           <div style={styles.thumbRow}>
