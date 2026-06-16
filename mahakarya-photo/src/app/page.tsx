@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, CSSProperties } from "react";
 import NextImage from "next/image";
 import QRCode from "qrcode";
 import { removeBackground } from "@imgly/background-removal";
@@ -14,6 +14,97 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = reject;
     img.src = src;
   });
+}
+
+const styles: Record<string, CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    background: "radial-gradient(circle at 50% -10%, #34272b 0%, #16100f 70%)",
+    color: "#f5efe8",
+    fontFamily: "system-ui, sans-serif",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "28px 16px 40px",
+    gap: 18,
+  },
+  title: {
+    fontFamily: "Georgia, 'Times New Roman', serif",
+    fontSize: 38,
+    fontWeight: 700,
+    letterSpacing: 1,
+    margin: 0,
+    color: "#e7c79a",
+    textAlign: "center",
+  },
+  subtitle: {
+    margin: 0,
+    fontSize: 12,
+    letterSpacing: 4,
+    textTransform: "uppercase",
+    color: "#b9aa9d",
+  },
+  card: {
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 24,
+    padding: 14,
+    boxShadow: "0 24px 60px rgba(0,0,0,0.55)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    maxWidth: 520,
+    width: "100%",
+  },
+  media: { borderRadius: 16, maxHeight: "48vh", maxWidth: "100%", display: "block" },
+  pickLabel: {
+    fontSize: 12,
+    letterSpacing: 3,
+    textTransform: "uppercase",
+    color: "#b9aa9d",
+    alignSelf: "flex-start",
+  },
+  thumbRow: { display: "flex", gap: 10, overflowX: "auto", maxWidth: 520, width: "100%", paddingBottom: 6 },
+  button: {
+    padding: "16px 44px",
+    fontSize: 18,
+    fontWeight: 700,
+    borderRadius: 999,
+    border: "none",
+    cursor: "pointer",
+    background: "linear-gradient(135deg,#e7c79a,#c79a5e)",
+    color: "#2a1d10",
+    boxShadow: "0 8px 24px rgba(199,154,94,0.4)",
+    letterSpacing: 0.5,
+  },
+  status: { color: "#d8c9bb", fontSize: 15 },
+  error: { color: "#ff9b8a", fontSize: 14, maxWidth: 520, textAlign: "center" },
+  qrCard: {
+    background: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+    color: "#2a2024",
+  },
+  qrLabel: { fontSize: 13, letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 },
+};
+
+function thumb(active: boolean): CSSProperties {
+  return {
+    height: 64,
+    width: 64,
+    objectFit: "cover",
+    borderRadius: 12,
+    cursor: "pointer",
+    flex: "0 0 auto",
+    transform: active ? "scale(1.06)" : "scale(1)",
+    outline: active ? "3px solid #e7c79a" : "3px solid transparent",
+    outlineOffset: 1,
+    transition: "transform .15s",
+  };
 }
 
 export default function Home() {
@@ -88,54 +179,57 @@ export default function Home() {
     setStatus(null);
   }
 
-  const tombol = {
-    padding: "14px 28px",
-    fontSize: 18,
-    borderRadius: 999,
-    border: "none",
-    background: "white",
-    cursor: "pointer",
-  };
-
   return (
-    <main style={{ minHeight: "100vh", background: "black", color: "white", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 16 }}>
-      <video ref={videoRef} autoPlay playsInline style={{ maxHeight: "55vh", maxWidth: "100%", display: photo ? "none" : "block" }} />
-      {photo && <img src={photo} alt="hasil" style={{ maxHeight: "55vh", maxWidth: "100%" }} />}
+    <main style={styles.page}>
+      <div style={{ textAlign: "center" }}>
+        <h1 style={styles.title}>Mahakarya Photo</h1>
+        <p style={styles.subtitle}>Abadikan momen terbaikmu</p>
+      </div>
+
+      <div style={styles.card}>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          style={{ ...styles.media, display: photo ? "none" : "block" }}
+        />
+        {photo && <img src={photo} alt="hasil" style={styles.media} />}
+      </div>
 
       {!photo && (
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", maxWidth: "100%", padding: 8 }}>
-          {BACKGROUNDS.map((bg) => (
-            <NextImage
-              key={bg}
-              src={bg}
-              alt=""
-              width={64}
-              height={64}
-              loading="lazy"
-              onClick={() => setSelectedBg(bg)}
-              style={{
-                height: 64, width: 64, objectFit: "cover", borderRadius: 8,
-                cursor: "pointer", flex: "0 0 auto",
-                border: selectedBg === bg ? "3px solid #4f9cff" : "3px solid transparent",
-              }}
-            />
-          ))}
-        </div>
+        <>
+          <span style={styles.pickLabel}>Pilih Latar</span>
+          <div style={styles.thumbRow}>
+            {BACKGROUNDS.map((bg) => (
+              <NextImage
+                key={bg}
+                src={bg}
+                alt=""
+                width={64}
+                height={64}
+                loading="lazy"
+                onClick={() => setSelectedBg(bg)}
+                style={thumb(selectedBg === bg)}
+              />
+            ))}
+          </div>
+        </>
       )}
 
-      {status && <p>{status}</p>}
-      {error && <p style={{ color: "salmon" }}>Error: {error}</p>}
+      {status && <p style={styles.status}>{status}</p>}
+      {error && <p style={styles.error}>Error: {error}</p>}
+
       {qr && (
-        <div style={{ textAlign: "center" }}>
-          <p>Scan untuk download:</p>
-          <img src={qr} alt="QR" style={{ width: 200, height: 200, background: "white", padding: 8, borderRadius: 8 }} />
+        <div style={styles.qrCard}>
+          <span style={styles.qrLabel}>Scan untuk unduh</span>
+          <img src={qr} alt="QR" style={{ width: 190, height: 190 }} />
         </div>
       )}
 
       {!photo ? (
-        <button onClick={capture} style={tombol}>Capture</button>
+        <button onClick={capture} style={styles.button}>Capture</button>
       ) : (
-        <button onClick={reset} style={tombol}>Foto Lagi</button>
+        <button onClick={reset} style={styles.button}>Foto Lagi</button>
       )}
 
       <canvas ref={canvasRef} style={{ display: "none" }} />
