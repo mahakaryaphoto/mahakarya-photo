@@ -8,14 +8,14 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   try {
-    const { image } = await req.json();          // foto dalam bentuk teks base64
+    const { image } = await req.json();
     const base64 = image.split(",")[1];
     const buffer = Buffer.from(base64, "base64");
 
-    const path = `foto-${Date.now()}.png`;        // nama file unik
+    const path = `foto-${Date.now()}.jpg`;
     const { error } = await supabase.storage
       .from("hasil")
-      .upload(path, buffer, { contentType: "image/png" });
+      .upload(path, buffer, { contentType: "image/jpeg" });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
